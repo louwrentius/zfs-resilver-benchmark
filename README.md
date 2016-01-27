@@ -26,3 +26,4 @@ Example run-time output. Data is fake.
     2016-01-27 23:33:29,083 - zrb - INFO - pool-raidz-1-4
     2016-01-27 23:33:55,744 - zrb - INFO - pool-raidz-1-4 Hours: 0 Minutes: 0
 
+The code is not pretty and probably violates some best practices. Work in progress.
