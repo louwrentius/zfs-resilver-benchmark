@@ -5,7 +5,7 @@ This is how the script works:
 2. Write data on pool.
 3. Replace arbitrary drive with another one. 
 4. Wait for resilver to complete.
-5. Grab resilver duration and log to file.
+5. Grab resilver duration and log to csv file.
 
 Example run-time output. Data is fake.
 
@@ -27,3 +27,22 @@ Example run-time output. Data is fake.
     2016-01-27 23:33:55,744 - zrb - INFO - pool-raidz-1-4 Hours: 0 Minutes: 0
 
 The code is not pretty and probably violates some best practices. Work in progress.
+
+Example of csv output: 
+
+    poolname    vdevtype    vdevcount   vdevsize    hours   minutes
+    pool-mirror-1-2 mirror  1   2   0   7
+    pool-mirror-2-2 mirror  2   2   0   3
+    pool-mirror-3-2 mirror  3   2   0   2
+    pool-mirror-4-2 mirror  4   2   0   1
+    pool-mirror-5-2 mirror  5   2   0   1
+    pool-raidz-1-3  raidz   1   3   0   4
+    pool-raidz-1-4  raidz   1   4   0   2
+    pool-raidz-1-5  raidz   1   5   0   2
+    pool-raidz-1-9  raidz   1   9   0   1
+    pool-raidz2-1-4 raidz2  1   4   0   4
+    pool-raidz2-1-6 raidz2  1   6   0   2
+    pool-raidz2-1-10    raidz2  1   10  0   2
+    pool-raidz3-1-5 raidz3  1   5   0   4
+    pool-raidz3-1-7 raidz3  1   7   0   3
+    pool-raidz3-1-11    raidz3  1   11  0   3
