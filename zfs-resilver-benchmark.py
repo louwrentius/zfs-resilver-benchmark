@@ -41,6 +41,7 @@ class zpool:
         p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE,  shell=True)
         rawdata = p.communicate()
         returncode = p.returncode
+        self.logger.debug("Return code is: " + str(returncode))
         return rawdata
 
     def create(self):
@@ -48,14 +49,24 @@ class zpool:
         for vdev in range(self.vdevcount):
             devices += self.create_vdev()
         command = "zpool create " + self.poolname + " " + devices + " -f" 
+        self.logger.info("Creating ZFS pool")
         output = self.run_cmd(command)
         while output[1]:
             output = self.run_cmd(command)
-            time.sleep(20)
+            self.logger.warning(str(output[0]) + " " + str(output[1]) )
+            time.sleep(10)
 
     def destroy(self):
         command = "zpool destroy -f " + self.poolname 
+        self.logger.info("Destroying pool")
         output = self.run_cmd(command)
+
+    def get_pool_size(self):
+        command = "df | grep " + str(self.poolname) + " | awk '{ print $2 }'"
+        data = self.run_cmd(command)
+        size = int(data[0]) 
+        sizemb = (size / 1024)
+        return sizemb
 
     def status(self):
         command = "zpool status " + self.poolname 
@@ -74,10 +85,12 @@ class zpool:
             data['minutes'] = match.group(2)
             return data
         else:
-            time.sleep(20)
-            self.get_resilver_performance()
+            self.logger.debug("Performance data not found: " + str(output))
 
-    def write_data(self, size):
+    def write_data(self, percentage):
+        poolsize = self.get_pool_size()
+        size = poolsize * percentage / 100
+        self.logger.info("Writing test data to pool " + str(percentage) + "% of pool capacity (" + str(size) + " MB)")
         command = "dd if=/dev/zero of=/" + self.poolname + "/test.bin bs=1M count=" + str(size) + " conv=sync"
         output = self.run_cmd(command)
         return output
@@ -103,7 +116,7 @@ class zpool:
     def wait_for_resilver(self):
         while self.resilver_in_progress():
             self.logger.info(self.resilver_status())
-            time.sleep(20)
+            time.sleep(10)
 
     def replace_drive(self):
         replacement = self.zpooldevices.pop()
@@ -111,6 +124,7 @@ class zpool:
         rand = random.randrange(0, num_devices)
         tobereplaced = self.used_zpooldevices[rand]
         command = "zpool replace " + self.poolname + " " + str(tobereplaced) + " " + str(replacement) + " -f"
+        self.logger.info("Replacing drive (start resilver)")
         output = self.run_cmd(command)
 	try:
 	        self.logger.debug(output)
@@ -128,6 +142,8 @@ class benchmark:
         self.devices = self.get_devices(filename)
         self.poolname = ""
         self.vdev = {}
+        self.data = 0
+
         self.logger = logging.getLogger('zrb')
         self.logger.setLevel(logging.INFO)
         self.benchmarkresults = []
@@ -141,7 +157,7 @@ class benchmark:
         pool = zpool(properties, self.devices, self.logger)
         self.logger.info(properties['poolname'])
         pool.create()
-        pool.write_data(100000)
+        pool.write_data(self.data)
         pool.replace_drive()
         pool.wait_for_resilver()
 
@@ -206,6 +222,7 @@ def main():
     bench.vdev['raidz2vdevs'] = [1]
     bench.vdev['raidz3'] = [5,7,11]
     bench.vdev['raidz3vdevs'] = [1]
+    bench.data = 25 # % of pool size
     bench.bench()
 
 if __name__ == "__main__":
