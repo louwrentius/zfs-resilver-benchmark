@@ -1,6 +1,7 @@
 This script allows you to benchmark resilver performance of various Zpool / VDEV configurations. 
 
 This is how the script works:
+
 1. Create pool + vdev(s).
 2. Write data on pool.
 3. Replace arbitrary drive with another one. 
