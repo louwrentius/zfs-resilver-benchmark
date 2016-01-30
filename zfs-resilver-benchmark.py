@@ -116,7 +116,7 @@ class zpool:
     def wait_for_resilver(self):
         while self.resilver_in_progress():
             self.logger.info(self.resilver_status())
-            time.sleep(10)
+            time.sleep(60)
 
     def replace_drive(self):
         replacement = self.zpooldevices.pop()
@@ -133,6 +133,7 @@ class zpool:
 		self.replace_drive()
 	
         self.used_zpooldevices.append(replacement)
+        time.sleep(10)
         return output
 
 
@@ -141,6 +142,7 @@ class benchmark:
     def __init__(self, filename):
         self.devices = self.get_devices(filename)
         self.poolname = ""
+        self.vdevtypes = ['mirror', 'raidz', 'raidz2', 'raidz3']
         self.vdev = {}
         self.data = 0
 
@@ -160,7 +162,6 @@ class benchmark:
         pool.write_data(self.data)
         pool.replace_drive()
         pool.wait_for_resilver()
-
         data = pool.get_resilver_performance()
         mydict = {}
         mydict = copy.deepcopy(properties)
@@ -184,11 +185,14 @@ class benchmark:
 
 
     def bench(self):
-        vdevtypes = ['mirror', 'raidz', 'raidz2', 'raidz3']
+
+        for vtype in self.vdevtypes:
+            if vtype not in self.vdev.keys():
+                self.vdevtypes.remove(vtype)
 
         properties = {}
 
-        for vdevtype in vdevtypes:
+        for vdevtype in self.vdevtypes:
             try:
                 if self.vdev[vdevtype]:
                     vd = str(vdevtype) + "vdevs"
@@ -214,15 +218,15 @@ def main():
     bench = benchmark(filename)
     bench.poolname = 'pool'
     bench.vdev['mirror'] = [2]
-    #bench.vdev['mirrorvdevs'] = [1]
+    bench.vdev['mirrorvdevs'] = [1]
     bench.vdev['mirrorvdevs'] = [1,2,3,4,5]
     bench.vdev['raidz'] = [3,4,5,9]
     bench.vdev['raidzvdevs'] = [1]
-    bench.vdev['raidz2'] = [4,6,10]
+    bench.vdev['raidz2'] = [10]
     bench.vdev['raidz2vdevs'] = [1]
     bench.vdev['raidz3'] = [5,7,11]
     bench.vdev['raidz3vdevs'] = [1]
-    bench.data = 25 # % of pool size
+    bench.data = 50 # % of pool size
     bench.bench()
 
 if __name__ == "__main__":
